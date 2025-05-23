@@ -81,9 +81,7 @@ app.post("/login", async (req, res) => {
       const token = jwt.sign(payload, SECRET, {
         expiresIn: EXPIRES_IN,
       });
-      res.cookie("token", token, cookieOptions).json({
-        nickname,
-      });
+      res.cookie("token", token, cookieOptions).json(nickname);
     }
   } catch (error) {
     console.log(err);
@@ -124,7 +122,7 @@ app.post("/logout", async (req, res) => {
 });
 
 /*post 부분 */
-import multer from "multer";
+import multer from "multer"; // 프론트엔드에서 전달된 첨부파일 업로드 처리하기 위해 사용
 import path from "path";
 import fs from "fs";
 import { Post } from "./models/post.js";
@@ -142,49 +140,72 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.get("/uploads/:filename", (req, res) => {
   const { filename } = req.params;
   res.sendFile(path.join(__dirname, "uploads", filename));
-});
+}); // 사용자가 요청하면 filename을 꺼내 uploads 폴더에 있는 filename이름의 파일을 보내준다.
 
-const uploadDir = "uploads";
+const uploadDir = "uploads"; // uplaod 폴더가 없을 시 생성
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
 
+//파일이 저장 돌 위치 정하기
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/");
+    cb(null, "uploads/"); //첫번째 인자는 오류객체 넣는 곳 두번째는 파일이 저장될 폴더 경로 지정
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(null, uniqueSuffix + path.extname(file.originalname));
-  },
+  }, //파일 이름 설정 무작위 수를 반환 + 업로드된 원본 파일의 확장자 불러와 생성
 });
 
 const upload = multer({ storage });
 
 app.post("/createpost", upload.single("files"), async (req, res) => {
   try {
+    console.log(req.body);
     const { title, summary, content } = req.body;
     const { token } = req.cookies;
     if (!token) {
       return res.status(401).json({ error: "로그인 필요" });
     }
 
-    const userInfo = jwt.verify(token, secretKey);
-
+    const user = jwt.verify(token, SECRET);
     const postData = {
       title,
       summary,
       content,
-      cover: req.file ? req.file.path : null, // 파일 경로 저장
-      author: userInfo.username,
+      cover: req.file ? req.file.path : null, // 파일이 있다면 경로 저장
+      author: user.nickname,
     };
 
-    await postModel.create(postData);
-    console.log("포스트 등록 성공");
-
+    await Post.create(postData);
+    console.log("포스트 등록 성공", postData);
     res.json({ message: "포스트 글쓰기 성공" });
   } catch (err) {
     console.log("에러", err);
+    return res.status(500).json({ error: "서버 에러" });
+  }
+});
+
+app.get("/postlist", async (req, res) => {
+  try {
+    const page = parseInt(req.query.page); //받아온 페이지
+    const limit = parseInt(req.query.limit); // 한 페이지당 숫자
+
+    const total = await Post.countDocuments(); //mongoDB에 저장된 포스트 수
+    const skip = page * limit; // 페이지당 불러올 번호(?)를 체크하기 위해 1=>1,2,3 2=>4,5,6
+
+    const posts = await Post.find()
+      .sort({ createdAt: -1 }) // 최신순
+      .skip(skip)
+      .limit(limit);
+    // 총 개수가 현재 개수 + 다음 불러올 개수보다 커야 다음으로 넘어갈 수 있음
+    const hasNext = total > skip + posts.length;
+    if (!posts) res.status(404).json({ message: "불러올 post 없음" });
+
+    res.json({ posts, total, hasNext });
+  } catch (error) {
+    console.log(error);
     return res.status(500).json({ error: "서버 에러" });
   }
 });

@@ -16,7 +16,7 @@ const postShema = new Schema(
       type: String,
       require: true,
     },
-    image: {
+    cover: {
       type: String,
     },
     author: {
@@ -29,4 +29,4 @@ const postShema = new Schema(
   }
 );
 
-export const Post = model("Post", postShema );
+export const Post = model("Post", postShema);
