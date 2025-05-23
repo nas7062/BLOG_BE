@@ -5,24 +5,35 @@ import { User } from "./models/user.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
-
+import dotenv from "dotenv";
+dotenv.config();
 const app = express();
-const port = 3000;
+const PORT = process.env.PORT;
+const SALT = process.env.SALT;
+const SECRET = process.env.SECRET;
+const EXPIRES_IN = process.env.EXPIRES_IN;
+const MONGO_URL = process.env.MONGO_URL;
+const CORS_ORIGIN = process.env.CORS_ORIGIN;
 
-const SALT = 10;
-const SECRET = "KMSBLOG";
-const EXPIRES_IN = "1d";
+app.use(express.json()); // 요청의 body에 있는 JSON 데이터를 파있게싱
+app.use(cookieParser()); // 토큰을 쿠키로 받을 수
 
-app.use(express.json()); // 요청의 body에 있는 JSON 데이터를 파싱
-app.use(cookieParser()); // 토큰을 쿠키로 받을 수 있게
 //CORS 설정
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: CORS_ORIGIN,
     credentials: true, // 쿠키 포함한 요청을 허용하는 것
   })
 );
 
+mongoose // mongoDB와 연결
+  .connect(MONGO_URL)
+  .then(() => console.log("mongoDB 연결"))
+  .catch(() => console.log("mongoDB 연결 실패"));
+
+/*user 부분 */
+
+// 쿠키 설정
 const cookieOptions = {
   httpOnly: true, // XSS 공격으로부터 쿠키 보호됨 (자바스크립트 접근 불가)
   maxAge: 1000 * 60 * 60, // 1시간
@@ -32,13 +43,6 @@ const cookieOptions = {
   path: "/",
   // domain: ".yourdomain.com", // 필요 시 도메인 추가
 };
-
-mongoose // mongoDB와 연결
-  .connect(
-    "mongodb+srv://nas7062:706270@cluster0.dpcdx0t.mongodb.net/blog?retryWrites=true&w=majority&appName=Cluster0"
-  )
-  .then(() => console.log("mongoDB 연결"))
-  .catch(() => console.log("mongoDB 연결 실패"));
 
 // 회원가입
 app.post("/register", async (req, res) => {
@@ -89,7 +93,6 @@ app.post("/login", async (req, res) => {
 
 app.get("/profile", async (req, res) => {
   const token = req.cookies.token;
-  console.log(token);
   if (!token) {
     return res.json({ message: "인증 토큰이 없습니다" });
   }
@@ -120,6 +123,72 @@ app.post("/logout", async (req, res) => {
     .json({ message: "로그아웃 되었습니다" });
 });
 
-app.listen(port, () => {
-  console.log(`연결성공 port = ${port}`);
+/*post 부분 */
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { Post } from "./models/post.js";
+
+import { fileURLToPath } from "url";
+
+// __dirname 설정 (ES 모듈에서는 __dirname이 기본적으로 제공되지 않음)
+const __filename = fileURLToPath(import.meta.url); // 현재 모듈 파일의 경로 ex)'file:///Users/minseok/project/server/index.js'
+const __dirname = path.dirname(__filename); //일반 경로로 바꿔줍니다. ex ) '/Users/minseok/project/server/index.js'
+
+// 요청할 때 uploads로 시작한다면 uploads 에 있는 파일을 준다
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// 정적 파일 접근 시 CORS 오류를 방지하기 위한 설정
+app.get("/uploads/:filename", (req, res) => {
+  const { filename } = req.params;
+  res.sendFile(path.join(__dirname, "uploads", filename));
+});
+
+const uploadDir = "uploads";
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage });
+
+app.post("/createpost", upload.single("files"), async (req, res) => {
+  try {
+    const { title, summary, content } = req.body;
+    const { token } = req.cookies;
+    if (!token) {
+      return res.status(401).json({ error: "로그인 필요" });
+    }
+
+    const userInfo = jwt.verify(token, secretKey);
+
+    const postData = {
+      title,
+      summary,
+      content,
+      cover: req.file ? req.file.path : null, // 파일 경로 저장
+      author: userInfo.username,
+    };
+
+    await postModel.create(postData);
+    console.log("포스트 등록 성공");
+
+    res.json({ message: "포스트 글쓰기 성공" });
+  } catch (err) {
+    console.log("에러", err);
+    return res.status(500).json({ error: "서버 에러" });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`연결성공 port = ${PORT}`);
 });
