@@ -23,6 +23,12 @@ const postShema = new Schema(
       type: String,
       require: true,
     },
+    likes: {
+      // 어떤 유저가 눌렀는지 알 수 있도록 ref :"user" 설정
+      type: [{ type: Schema.Types.ObjectId, ref: "User" }],
+      default: [],
+      required: false,
+    },
   },
   {
     timestamps: true,

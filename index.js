@@ -68,6 +68,7 @@ app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email });
+    console.log(user);
     if (!user)
       return res.status(409).json({ message: "등록된 이메일이 없습니다." });
     const match = await bcrypt.compare(password, user.password); // 입력한 비번과 해시된 비번 비교
@@ -76,12 +77,12 @@ app.post("/login", async (req, res) => {
         .status(409)
         .json({ message: "등록된 이메일에 패스워드가 다릅니다." });
     else {
-      const { email, nickname } = user; // mongoDb에서 가져옴
+      const { _id, email, nickname } = user; // mongoDb에서 가져옴
       const payload = { email, nickname }; // JWT 페이로드 생성//
       const token = jwt.sign(payload, SECRET, {
         expiresIn: EXPIRES_IN,
       });
-      res.cookie("token", token, cookieOptions).json(nickname);
+      res.cookie("token", token, cookieOptions).json({ nickname, _id });
     }
   } catch (error) {
     console.log(err);
@@ -243,8 +244,8 @@ app.put("/post/:postId", upload.single("files"), async (req, res) => {
       return res.status(401).json({ error: "로그인 필요" });
     }
     const user = jwt.verify(token, SECRET);
-    
-    const post = await Post.findById(postId); // id로  해당 post 찾음 
+
+    const post = await Post.findById(postId); // id로  해당 post 찾음
     // 작성자 확인 (자신의 글만 수정 가능)
     if (post.author !== user.nickname) {
       return res.status(403).json({ error: "자신의 글만 수정할 수 있습니다." });
@@ -273,6 +274,45 @@ app.put("/post/:postId", upload.single("files"), async (req, res) => {
     res.json({
       message: "게시물이 수정되었습니다.",
       post: updatedPost,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "서버 에러" });
+  }
+});
+
+app.post("/like/:postId", async (req, res) => {
+  const { postId } = req.params;
+  const { token } = req.cookies;
+  try {
+    if (!token) {
+      return res.status(401).json({ error: "로그인 필요" });
+    }
+    const decoded = jwt.verify(token, SECRET);
+
+    const user = await User.findOne({ nickname: decoded.nickname });
+    if (!user) {
+      return res.status(401).json({ error: "해당 유저가 없음 " });
+    }
+    const post = await Post.findById(postId).populate("likes", "nickname");
+    if (!post) {
+      return res.status(404).json({ error: "게시물을 찾을 수 없습니다." });
+    }
+    //  좋아요 중복 방지
+    const alreadyLiked = post.likes.some(
+      (userObj) => userObj._id.toString() === user._id.toString()
+    );
+    if (alreadyLiked) {
+      post.likes = post.likes.filter(
+        (userObj) => userObj._id.toString() !== user._id.toString()
+      );
+    } else {
+      post.likes.push(user._id); // 좋아요 추가
+    }
+    await post.save();
+    return res.json({
+      liked: !alreadyLiked,
+      likeCount: post.likes.length,
     });
   } catch (error) {
     console.log(error);
