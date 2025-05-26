@@ -234,6 +234,52 @@ app.delete("/post/:postId", async (req, res) => {
   }
 });
 
+app.put("/post/:postId", upload.single("files"), async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { title, summary, content } = req.body;
+    const { token } = req.cookies;
+    if (!token) {
+      return res.status(401).json({ error: "로그인 필요" });
+    }
+    const user = jwt.verify(token, SECRET);
+    
+    const post = await Post.findById(postId); // id로  해당 post 찾음 
+    // 작성자 확인 (자신의 글만 수정 가능)
+    if (post.author !== user.nickname) {
+      return res.status(403).json({ error: "자신의 글만 수정할 수 있습니다." });
+    }
+    if (!post) {
+      return res.status(404).json({ error: "게시물을 찾을 수 없습니다." });
+    }
+
+    // 수정할 데이터 객체 생성
+    const updateData = {
+      title,
+      summary,
+      content,
+    };
+    // 새 파일이 업로드된 경우 파일 경로 업데이트
+    if (req.file) {
+      updateData.cover = req.file.path;
+    }
+
+    // 게시물 업데이트
+    const updatedPost = await Post.findByIdAndUpdate(
+      postId,
+      updateData,
+      { new: true } // 업데이트된 문서 반환
+    );
+    res.json({
+      message: "게시물이 수정되었습니다.",
+      post: updatedPost,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "서버 에러" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`연결성공 port = ${PORT}`);
 });
