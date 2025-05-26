@@ -210,6 +210,30 @@ app.get("/postlist", async (req, res) => {
   }
 });
 
+app.get("/post/:postId", async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const post = await Post.findOne({ _id: postId });
+    if (!post) res.status(404).json({ message: "불러올 post 없음" });
+    res.json(post);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "서버 에러" });
+  }
+});
+
+app.delete("/post/:postId", async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const post = await Post.deleteOne({ _id: postId });
+    if (!post) res.status(404).json({ message: "삭제할 post 없음" });
+    res.json({ message: "게시물 삭제 완료" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "서버 에러" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`연결성공 port = ${PORT}`);
 });
