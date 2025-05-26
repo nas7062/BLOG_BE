@@ -2,7 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import { User } from "./models/user.js";
-import bcrypt from "bcryptjs";
+import bcrypt, { compare } from "bcryptjs";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
@@ -68,7 +68,6 @@ app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email });
-    console.log(user);
     if (!user)
       return res.status(409).json({ message: "등록된 이메일이 없습니다." });
     const match = await bcrypt.compare(password, user.password); // 입력한 비번과 해시된 비번 비교
@@ -85,7 +84,7 @@ app.post("/login", async (req, res) => {
       res.cookie("token", token, cookieOptions).json({ nickname, _id });
     }
   } catch (error) {
-    console.log(err);
+    console.log(error);
     return res.status(500).json({ message: "서버 에러" });
   }
 });
@@ -129,6 +128,7 @@ import fs from "fs";
 import { Post } from "./models/post.js";
 
 import { fileURLToPath } from "url";
+import { Comment } from "./models/comment.js";
 
 // __dirname 설정 (ES 모듈에서는 __dirname이 기본적으로 제공되지 않음)
 const __filename = fileURLToPath(import.meta.url); // 현재 모듈 파일의 경로 ex)'file:///Users/minseok/project/server/index.js'
@@ -317,6 +317,33 @@ app.post("/like/:postId", async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "서버 에러" });
+  }
+});
+
+app.post("/comments", async (req, res) => {
+  const { content, author, postId } = req.body;
+  try {
+    const newComment = await Comment.create({
+      content,
+      author,
+      postId,
+    });
+    res.status(201).json(newComment);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "댓글 작성 실패" });
+  }
+});
+
+app.get("/comments/:postId", async (req, res) => {
+  const { postId } = req.params;
+  try {
+    const comment = await Comment.find({ postId });
+    if (!comment) res.status(404).json({ message: "불러올 comment 없음" });
+    res.status(201).json(comment);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "댓글 불러오기 실패" });
   }
 });
 
