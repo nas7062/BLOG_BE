@@ -81,7 +81,7 @@ app.post("/login", async (req, res) => {
       const token = jwt.sign(payload, SECRET, {
         expiresIn: EXPIRES_IN,
       });
-      res.cookie("token", token, cookieOptions).json({ nickname, _id });
+      res.cookie("token", token, cookieOptions).json({ email,gi nickname, _id });
     }
   } catch (error) {
     console.log(error);
