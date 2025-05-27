@@ -359,6 +359,32 @@ app.delete("/comments/:commentId", async (req, res) => {
   }
 });
 
+app.put("/comments/:commentId", async (req, res) => {
+  const { commentId } = req.params;
+  const { editContent } = req.body;
+  try {
+    const comment = await Comment.findOne({ commentId });
+    const newComment = {
+      ...comment,
+      content: editContent,
+    };
+    const updatecomment = await Comment.findByIdAndUpdate(
+      commentId,
+      newComment,
+      {
+        new: true,
+      }
+    );
+    res.json({
+      message: "게시물이 수정되었습니다.",
+      comment: updatecomment,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "댓글 수정 실패" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`연결성공 port = ${PORT}`);
 });
