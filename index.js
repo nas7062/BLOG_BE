@@ -398,6 +398,38 @@ app.put("/comments/:commentId", async (req, res) => {
   }
 });
 
+// 내 정보 가져오기 (user,post,comment,like)
+app.get("/user/:nickname/full", async (req, res) => {
+  const { nickname } = req.params;
+
+  try {
+    const user = await User.findOne({ nickname }).select("-password");
+    if (!user)
+      return res.status(404).json({ message: "유저를 찾을 수 없습니다." });
+
+    const [posts, comments, likes] = await Promise.all([
+      Post.find({ author: nickname }).sort({ createdAt: -1 }),
+      Comment.find({ author: nickname }).sort({ createdAt: -1 }),
+      Post.find({ likes: user._id }), // 예시: like 누른 post
+    ]);
+    const postAndCommentCount = await Promise.all(
+      posts.map(async (post) => {
+        const commentCount = await Comment.countDocuments({ postId: post._id });
+        const postObject = post.toObject();
+        postObject.commentCount = commentCount;
+        return postObject;
+      })
+    );
+    if (!posts || !comments || !likes)
+      return res.status(404).json({ message: "내 정보 불러오는 중 오류발생" });
+
+    res.json({ user, posts: postAndCommentCount, comments, likes });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`연결성공 port = ${PORT}`);
 });
