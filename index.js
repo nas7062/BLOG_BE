@@ -200,11 +200,20 @@ app.get("/postlist", async (req, res) => {
       .sort({ createdAt: -1 }) // 최신순
       .skip(skip)
       .limit(limit);
+    const postAndCommentCount = await Promise.all(
+      posts.map(async (post) => {
+        const commentCount = await Comment.countDocuments({ postId: post._id });
+        const postObject = post.toObject();
+        postObject.commentCount = commentCount;
+        return postObject;
+      })
+    );
+
     // 총 개수가 현재 개수 + 다음 불러올 개수보다 커야 다음으로 넘어갈 수 있음
     const hasNext = total > skip + posts.length;
     if (!posts) res.status(404).json({ message: "불러올 post 없음" });
 
-    res.json({ posts, total, hasNext });
+    res.json({ posts: postAndCommentCount, total, hasNext });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "서버 에러" });
@@ -216,7 +225,11 @@ app.get("/post/:postId", async (req, res) => {
     const { postId } = req.params;
     const post = await Post.findOne({ _id: postId });
     if (!post) res.status(404).json({ message: "불러올 post 없음" });
-    res.json(post);
+    const commentCount = await Comment.countDocuments({ postId });
+    const postObject = post.toObject();
+    postObject.commentCount = commentCount;
+
+    res.json(postObject);
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "서버 에러" });
