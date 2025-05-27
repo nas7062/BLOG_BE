@@ -1,4 +1,4 @@
-import express from "express";
+import express, { json } from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import { User } from "./models/user.js";
@@ -344,6 +344,18 @@ app.get("/comments/:postId", async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "댓글 불러오기 실패" });
+  }
+});
+
+app.delete("/comments/:commentId", async (req, res) => {
+  const { commentId } = req.params;
+  try {
+    const comment = await Comment.findByIdAndDelete(commentId);
+    if (!comment) res.status(404).json({ message: "삭제할 comment 없음" });
+    res.json({ message: "댓글 삭제 완료" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "댓글 삭제 실패" });
   }
 });
 
