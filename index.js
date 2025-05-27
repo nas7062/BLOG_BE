@@ -81,7 +81,7 @@ app.post("/login", async (req, res) => {
       const token = jwt.sign(payload, SECRET, {
         expiresIn: EXPIRES_IN,
       });
-      res.cookie("token", token, cookieOptions).json({ email,gi nickname, _id });
+      res.cookie("token", token, cookieOptions).json({ email, nickname, _id });
     }
   } catch (error) {
     console.log(error);
@@ -426,7 +426,34 @@ app.get("/user/:nickname/full", async (req, res) => {
     res.json({ user, posts: postAndCommentCount, comments, likes });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "서버 에러" });
+  }
+});
+
+app.put("/user/update", async (req, res) => {
+  const { email, nickname, password } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    const isMatch = await User.findOne({
+      nickname,
+    });
+    if (isMatch) {
+      return res
+        .status(409)
+        .json({ message: "중복된 이메일 혹은 닉네임이 존재합니다" });
+    }
+    const hashed = await bcrypt.hash(password, parseInt(SALT)); // 비밀번호 암호화(SALT이용)
+    const updateUser = await User.findOneAndUpdate(
+      { email }, // 이 조건으로 유저 찾기
+      { nickname, password: hashed }, // 변경할 데이터
+      { new: true } // 업데이트 후의 데이터를 반환
+    );
+    res
+      .status(200)
+      .json({ message: "사용자 정보가 성공적으로 업데이트되었습니다" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "서버 에러" });
   }
 });
 
