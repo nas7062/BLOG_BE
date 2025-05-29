@@ -1,6 +1,6 @@
 import { Comment } from "../models/Comment.js";
 
-export const createPost = async (req, res) => {
+export const createComment = async (req, res) => {
   const { content, author, postId } = req.body;
   try {
     const newComment = await Comment.create({
@@ -15,7 +15,7 @@ export const createPost = async (req, res) => {
   }
 };
 
-export const getPost = async (req, res) => {
+export const getComment = async (req, res) => {
   const { postId } = req.params;
   try {
     const comment = await Comment.find({ postId });
@@ -27,7 +27,7 @@ export const getPost = async (req, res) => {
   }
 };
 
-export const deletePost = async (req, res) => {
+export const deleteComment = async (req, res) => {
   const { commentId } = req.params;
   try {
     const comment = await Comment.findByIdAndDelete(commentId);
@@ -39,7 +39,7 @@ export const deletePost = async (req, res) => {
   }
 };
 
-export const updatePost = async (req, res) => {
+export const updateComment = async (req, res) => {
   const { commentId } = req.params;
   const { editContent } = req.body;
   try {

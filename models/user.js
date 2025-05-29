@@ -18,6 +18,12 @@ const userShema = new Schema(
       type: String,
       require: true,
     },
+    kakaoId: {
+      type: String,
+      sparse: true,
+      unique: true,
+    },
+    profileImage: String,
   },
   {
     timestamps: true,

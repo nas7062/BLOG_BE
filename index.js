@@ -5,8 +5,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 const app = express();
-const PORT = process.env.PORT;
-const CORS_ORIGIN = process.env.CORS_ORIGIN;
+export const PORT = process.env.PORT;
+export const CORS_ORIGIN = process.env.CORS_ORIGIN;
 export const SALT = process.env.SALT;
 
 app.use(express.json()); // 요청의 body에 있는 JSON 데이터를 파있게싱
@@ -44,6 +44,17 @@ const uploadDir = "uploads"; // uplaod 폴더가 없을 시 생성
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
+
+// 라우트 가져오기
+import authRoutes from "./routes/authroutes.js";
+import postRoutes from "./routes/postroutes.js";
+import commentRoutes from "./routes/commentroutes.js";
+import userRoutes from "./routes/userroutes.js";
+
+app.use("/auth", authRoutes);
+app.use("/post", postRoutes);
+app.use("/comments", commentRoutes);
+app.use("/user", userRoutes);
 
 app.listen(PORT, () => {
   console.log(`연결성공 port = ${PORT}`);

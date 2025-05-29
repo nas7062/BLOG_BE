@@ -1,3 +1,9 @@
+import { User } from "../models/user.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { SECRET, EXPIRES_IN } from "../config/jwt.js";
+import { SALT } from "../index.js";
+import { cookieOptions } from "../config/jwt.js";
 // 회원가입
 export const register = async (req, res) => {
   const { email, nickname, password } = req.body; // 요청받은 데이터
