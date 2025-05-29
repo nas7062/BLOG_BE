@@ -2,7 +2,6 @@
 import multer from "multer"; // 프론트엔드에서 전달된 첨부파일 업로드 처리하기 위해 사용
 import path from "path";
 
-
 //파일이 저장 돌 위치 정하기
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
