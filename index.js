@@ -26,7 +26,6 @@ import connectDB from "./config/db.js";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import path from "path";
-
 // __dirname 설정 (ES 모듈에서는 __dirname이 기본적으로 제공되지 않음)
 const __filename = fileURLToPath(import.meta.url); // 현재 모듈 파일의 경로 ex)'file:///Users/minseok/project/server/index.js'
 const __dirname = path.dirname(__filename); //일반 경로로 바꿔줍니다. ex ) '/Users/minseok/project/server/index.js'

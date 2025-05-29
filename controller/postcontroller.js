@@ -1,5 +1,8 @@
 import { Post } from "../models/Post.js";
+import { User } from "../models/user.js";
 import { Comment } from "../models/Comment.js";
+import jwt from "jsonwebtoken";
+import { SECRET } from "../config/jwt.js";
 export const createpost = async (req, res) => {
   try {
     console.log(req.body);
