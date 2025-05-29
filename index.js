@@ -50,11 +50,12 @@ import authRoutes from "./routes/authroutes.js";
 import postRoutes from "./routes/postroutes.js";
 import commentRoutes from "./routes/commentroutes.js";
 import userRoutes from "./routes/userroutes.js";
-
+import kakaoAuthRoutes from "./routes/kakaoroutes.js";
 app.use("/auth", authRoutes);
 app.use("/post", postRoutes);
 app.use("/comments", commentRoutes);
 app.use("/user", userRoutes);
+app.use("/auth/kakao", kakaoAuthRoutes);
 
 app.listen(PORT, () => {
   console.log(`연결성공 port = ${PORT}`);
