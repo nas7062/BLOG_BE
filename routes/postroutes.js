@@ -7,6 +7,7 @@ import {
   deletePost,
   updatePost,
   toggleLike,
+  serachPost,
 } from "../controller/postcontroller.js";
 
 import { upload } from "../middleware/upload.js";
@@ -20,5 +21,6 @@ router.get("/:postId", getPostById);
 router.delete("/:postId", deletePost);
 router.put("/:postId", upload.single("files"), updatePost);
 router.post("/like/:postId", toggleLike);
+router.post("/:search", serachPost);
 
 export default router;

@@ -173,3 +173,16 @@ export const toggleLike = async (req, res) => {
     return res.status(500).json({ error: "서버 에러" });
   }
 };
+
+export const serachPost = async (req, res) => {
+  const { search } = req.params;
+  try {
+    const post = await Post.find({ title: { $regex: search, $options: "i" } });
+    if (!post) {
+      return res.status(404).json({ error: "게시물을 찾을 수 없습니다." });
+    } else res.json(post);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "서버 에러" });
+  }
+};
