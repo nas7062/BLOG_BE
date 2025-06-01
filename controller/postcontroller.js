@@ -81,6 +81,7 @@ export const deletePost = async (req, res) => {
   try {
     const { postId } = req.params;
     const post = await Post.deleteOne({ _id: postId });
+    await Comment.deleteMany({ postId });
     if (!post) res.status(404).json({ message: "삭제할 post 없음" });
     res.json({ message: "게시물 삭제 완료" });
   } catch (error) {

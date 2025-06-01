@@ -19,10 +19,9 @@ app.use(
     credentials: true, // 쿠키 포함한 요청을 허용하는 것
   })
 );
-
+import connectDB from "./config/db.js";
 connectDB(); // DB연결
 
-import connectDB from "./config/db.js";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import path from "path";
@@ -36,7 +35,11 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // 정적 파일 접근 시 CORS 오류를 방지하기 위한 설정
 app.get("/uploads/:filename", (req, res) => {
   const { filename } = req.params;
-  res.sendFile(path.join(__dirname, "uploads", filename));
+  const filePath = path.join(__dirname, "uploads", filename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send("파일이 존재하지 않습니다.");
+  }
+  res.sendFile(filePath);
 }); // 사용자가 요청하면 filename을 꺼내 uploads 폴더에 있는 filename이름의 파일을 보내준다.
 
 const uploadDir = "uploads"; // uplaod 폴더가 없을 시 생성
