@@ -1,6 +1,6 @@
 import { User } from "../models/user.js";
-import { Post } from "../models/Post.js";
-import { Comment } from "../models/Comment.js";
+import { Post } from "../models/post.js";
+import { Comment } from "../models/comment.js";
 import bcrypt from "bcryptjs";
 import { SALT } from "../index.js";
 // 내 정보 가져오기 (user,post,comment,like)
